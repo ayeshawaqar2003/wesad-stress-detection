@@ -1,82 +1,104 @@
 # WESAD Stress Detection System 🧠
- 
+
 A subject-independent stress classification system trained on the WESAD dataset. Uses chest-worn biosignal data — electrodermal activity, skin temperature, and respiration — to classify a person's physiological state into four categories: Baseline, Stress, Amusement, and Meditation.
- 
+
 **Best model accuracy: 71.52%** — achieved with an ExtraTrees ensemble of 1500 trees using Quantile-Normal transformation for subject-independent generalization.
- 
+
 ---
- 
+
 ## The Problem
- 
+
 Stress detection from physiological signals is hard because every person's body is different. A "stressed" reading for one person might be their baseline for another. Most models fail when tested on subjects they've never seen.
- 
+
 This project solves that with **Quantile-Normal Transformation** — a normalization technique that maps each subject's raw biosignals into a standard normal distribution before feature extraction, effectively removing individual biological baselines and making the model generalize across subjects it was never trained on.
- 
+
 ---
- 
+
 ## Dataset
- 
+
 **WESAD** (Wearable Stress and Affect Detection) — a publicly available multimodal dataset for stress and affect recognition.
- 
+
 - 15 subjects (S2–S17, excluding S12)
 - Chest-worn RespiBAN sensor
 - Signals used: EDA (700Hz), Temperature (700Hz), Respiration (700Hz)
 - 4 labels: 1 = Baseline, 2 = Stress, 3 = Amusement, 4 = Meditation
+
 > Dataset not included in this repository. Download from: https://uni-siegen.de/life/forschung/telekom_stiftung/ubisys/tools/wesad.html
- 
+
 ---
- 
+
 ## What It Does
- 
+
 - Loads raw WESAD `.pkl` files per subject
 - Applies **Quantile-Normal Transformation** per subject to eliminate individual biological baseline differences
 - Extracts 30 statistical features per window (10 stats × 3 signals): mean, std, variance, min, max, median, 25th percentile, 75th percentile, skewness, kurtosis
 - Uses sliding windows of 10 seconds (7000 samples @ 700Hz) with 50% overlap
 - Trains an **ExtraTrees Ensemble** with SMOTE-Tomek class balancing
 - Evaluates on held-out subjects (S6–S9) — fully subject-independent validation
+
 ---
- 
+
 ## Model Comparison
- 
+
 Three model configurations were trained and evaluated:
- 
+
 | Model | Trees | Max Depth | Features | Class Weight | Test Accuracy |
 |---|---|---|---|---|---|
 | Model 1 | 1200 | 40 | sqrt | balanced | 70.98% |
 | Model 2 | 2000 | 50 | all (30) | balanced_subsample | 70.10% |
 | **Model 3 ✅** | **1500** | **45** | **log2** | **balanced** | **71.52%** |
- 
+
 **Model 3 selected** — best generalization across unseen subjects.
- 
+
 ---
- 
-## Classification Results (Best Model)
- 
+
+## Classification Results (Best Model — 71.52% Accuracy)
+
 ```
-              precision    recall  f1-score
-   Baseline       0.XX      0.XX      0.XX
-     Stress       0.XX      0.XX      0.XX
-  Amusement       0.XX      0.XX      0.XX
-  Meditation      0.XX      0.XX      0.XX
+              precision    recall  f1-score   support
+
+   Baseline       0.87      0.83      0.85       943
+     Stress       0.68      0.81      0.74       521
+  Amusement       0.33      0.12      0.18       297
+ Meditation       0.61      0.74      0.67       634
+
+   accuracy                           0.72      2395
+  macro avg       0.62      0.63      0.61      2395
+weighted avg       0.69      0.72      0.70      2395
 ```
-*(Replace with your actual classification report output)*
- 
+
+The model performs strongly on Baseline and Stress detection — the two states most critical for real-world wearable stress monitoring. Amusement remains the hardest class to separate, since its physiological signature (mild EDA/respiration shifts) closely overlaps with Baseline in the time domain. Frequency-domain features (e.g. Power Spectral Density) are a planned future improvement to address this.
+
+### Accuracy Progression
+
+The biggest breakthrough in this project came from addressing **inter-subject variability** — the core challenge in physiological affect detection, where one person's "stressed" reading can look like another person's resting baseline.
+
+| Stage | Technique | Test Accuracy |
+|---|---|---|
+| Initial Baseline | Random Forest + Z-score normalization | ~61.00% |
+| Without subject normalization | Multi-signal model, no quantile transform | 38.91% |
+| Iteration A | ExtraTrees (1200 trees) + Quantile Transform | 70.98% |
+| Iteration B | ExtraTrees (2000 trees) + SMOTE-Tomek | 70.10% |
+| **Final Architecture** | **ExtraTrees (1500 trees) + Quantile + SMOTE-Tomek** | **71.52%** |
+
+Subject-independent validation was used throughout — subjects S6, S7, S8, and S9 were entirely withheld from training and used exclusively for blind testing, giving a realistic measure of how the model performs on people it has never seen.
+
 ---
- 
+
 ## Two Interfaces
- 
+
 This project ships with two Streamlit dashboards:
- 
+
 ### 🌿 app.py — Personal Wellness Monitor (User-Friendly)
 Designed for non-technical users. Select sliders describe body feelings in plain language ("Sweaty", "Normal", "Chilly"). The model maps these to quantile-transformed feature vectors and returns a predicted state with a confidence gauge.
- 
+
 ### 📊 app2.py — Research Dashboard (Technical)
 Designed for researchers and clinicians. Numeric sliders represent delta values from a subject's physiological baseline. Includes feature importance visualization, model architecture details, and methodology summary.
- 
+
 ---
- 
+
 ## Project Structure
- 
+
 ```
 wesad-stress-detection/
 │
@@ -96,74 +118,85 @@ wesad-stress-detection/
     ├── S3/
     └── ...
 ```
- 
+
 ---
- 
+
 ## How to Run
- 
+
 **1. Clone the repository**
 ```bash
 git clone https://github.com/ayeshawaqar2003/wesad-stress-detection.git
 cd wesad-stress-detection
 ```
- 
+
 **2. Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
- 
+
 **3. Download the WESAD dataset**
 Place the WESAD folder in the project root so the path matches `WESAD/S2/S2.pkl` etc.
- 
+
 **4. Train the model**
 ```bash
 python train_model.py
 ```
 This generates `wesad_stress_model.pkl`
- 
+
 **5. Launch the dashboard**
- 
+
 User-friendly version:
 ```bash
 python -m streamlit run app.py
 ```
- 
+
 Technical research version:
 ```bash
 python -m streamlit run app2.py
 ```
- 
+
 ---
- 
+
 ## Key Technical Decisions
- 
+
 **Why Quantile-Normal Transformation?**
 Raw biosignals vary enormously between subjects — the same EDA value means completely different things for different people. QuantileTransformer maps each subject's signal distribution to a standard normal curve before windowing, removing individual differences and making features comparable across subjects. This was the single biggest accuracy breakthrough in this project.
- 
+
 **Why ExtraTrees over Random Forest?**
 ExtraTrees uses fully random split thresholds rather than optimized ones, which reduces variance and overfitting on small-to-medium biosignal datasets. Combined with SMOTE-Tomek class balancing it handles the severe class imbalance in WESAD (Baseline dominates) significantly better.
- 
+
 **Why SMOTE-Tomek?**
 WESAD has severe class imbalance — Baseline samples outnumber Stress and Meditation by a large margin. SMOTE-Tomek combines oversampling of minority classes with removal of noisy borderline samples, producing a cleaner, more balanced training distribution.
- 
+
 **Why subject-independent validation?**
 A stress detector that only works on people it's already seen is clinically useless. Holding out S6–S9 entirely from training gives a realistic estimate of how the model performs on new individuals.
- 
+
 ---
- 
+
 ## Research Paper
- 
-A full research paper documenting the methodology, experiments, and results is included in this repository (`Research Paper.pdf`).
- 
+
+This project is documented in a full research paper: **"Non-Diagnostic Human Health State Recognition Using Physiological Wearable Data and Machine Learning"** — submitted for Introduction to Artificial Intelligence (CS-408).
+
+The paper covers the complete methodology including literature review, signal preprocessing, the quantile normalization breakthrough, model architecture decisions, and detailed error analysis. Included in this repository as `Research Paper.pdf`.
+
+*Co-authored with Ayesha Qazi.*
+
 ---
- 
+
 ## Future Work
- 
+
 - Incorporate wrist sensor signals (BVP, ACC) for higher accuracy
 - Explore transformer-based architectures for sequence modeling
 - Build a real-time inference pipeline from live wearable data
 - Extend to continuous affect monitoring beyond discrete labels
+
 ---
+
+## Author
+
+**Ayesha Waqar** — Electronics Engineering graduate, Master's student specializing in AI
+
+📧 [your email here] · 💼 [your LinkedIn URL here] · 🐙 [github.com/ayeshawaqar2003](https://github.com/ayeshawaqar2003)
  
 ## Author
  
