@@ -375,18 +375,6 @@ The paper includes:
 
 ---
 
-# 👩‍💻 Author
-
-## **Ayesha Waqar**
-
-Electronics Engineering Graduate  
-Master's Student in Artificial Intelligence
-
-📧 Email: *your_email@example.com*
-
-💼 LinkedIn: *your-linkedin-url*
-
-🐙 GitHub: https://github.com/ayeshawaqar2003
 
 ---
 
@@ -396,11 +384,8 @@ Master's Student in Artificial Intelligence
 
 </div>
 
-## Author
 
-**Ayesha Waqar** — Electronics Engineering graduate, Master's student specializing in AI
 
-📧 [your email here] · 💼 [your LinkedIn URL here] · 🐙 [github.com/ayeshawaqar2003](https://github.com/ayeshawaqar2003)
  
 ## Author
  
